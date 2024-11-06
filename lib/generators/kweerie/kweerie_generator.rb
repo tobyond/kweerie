@@ -32,11 +32,11 @@ class KweerieGenerator < Rails::Generators::NamedBase
       -- Write your SQL query here
       -- Available parameters: #{parameters.map { |p| "$#{parameters.index(p) + 1} (#{p})" }.join(", ")}
 
-      SELECT
+      -- SELECT
         -- your columns here
-      FROM
+      -- FROM
         -- your tables here
-      WHERE
+      -- WHERE
         -- your conditions here
     SQL
   end

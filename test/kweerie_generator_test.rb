@@ -3,10 +3,18 @@
 require "test_helper"
 require "generators/kweerie/kweerie_generator"
 
-class KweerieGeneratorTest < Rails::Generators::TestCase
+class GeneratorTest < Rails::Generators::TestCase
   tests KweerieGenerator
-  destination Rails.root.join("tmp/generators")
-  setup :prepare_destination
+
+  # Set destination at class level
+  destination File.expand_path("../../tmp/generators", __dir__)
+
+  def setup
+    # Ensure destination directory exists and is clean
+    FileUtils.rm_rf(destination_root)
+    FileUtils.mkdir_p(destination_root)
+    super
+  end
 
   test "generator creates query files" do
     run_generator %w[user_search name email]

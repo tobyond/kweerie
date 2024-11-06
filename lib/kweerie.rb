@@ -26,3 +26,4 @@ end
 
 require_relative "kweerie/configuration"
 require_relative "kweerie/base"
+require_relative "kweerie/base_objects"
