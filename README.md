@@ -147,7 +147,27 @@ user.changes                   # => Hash of changes with [old, new] values
 user.original_attributes       # => Original attributes from DB
 ```
 
-### Performance Considerations
+## PostgreSQL Array Support
+
+BaseObjects handles PostgreSQL arrays by converting them to Ruby arrays with proper type casting:
+
+```ruby
+# In your PostgreSQL schema
+create_table :users do |t|
+  t.integer :preferred_ordering, array: true, default: []
+  t.string :tags, array: true
+  t.float :scores, array: true
+end
+
+# In your query
+user = UserSearch.with(name: 'Claude').first
+
+user.preferred_ordering  # => [1, 3, 2]
+user.tags                 # => ["ruby", "rails"]
+user.scores              # => [98.5, 87.2, 92.0]
+```
+
+## Performance Considerations
 
 BaseObjects creates a unique class for each query result set, with the following optimizations:
 

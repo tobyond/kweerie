@@ -35,12 +35,41 @@ class BaseObjectsTest < Minitest::Test
   end
 
   def test_type_casting
+    @mock_connection.results = [{
+      "name" => "Test User",
+      "email" => "test@example.com",
+      "created_at" => "2024-01-01 10:00:00",
+      "age" => "42",
+      "score" => "3.14",
+      "active" => "true",
+      "metadata" => '{"role": "admin", "preferences": {"theme": "dark"}}',
+      "tags" => '["ruby", "rails"]',
+      "pg_int_array" => "{1,2,3}",
+      "pg_string_array" => "{foo,bar}",
+      "empty_array" => "{}"
+    }]
+
     record = TestObjectQuery.with(name: 'Test User').first
-    
+
+    # Test basic types
     assert_instance_of Time, record.created_at
     assert_equal 42, record.age
     assert_equal 3.14, record.score
     assert_equal true, record.active
+
+    # Test JSONB
+    assert_instance_of Hash, record.metadata
+    assert_equal "admin", record.metadata["role"]
+    assert_equal "dark", record.metadata["preferences"]["theme"]
+
+    # Test JSON array
+    assert_instance_of Array, record.tags
+    assert_equal ["ruby", "rails"], record.tags
+
+    # Test PostgreSQL arrays
+    assert_equal [1, 2, 3], record.pg_int_array
+    assert_equal ["foo", "bar"], record.pg_string_array
+    assert_equal [], record.empty_array
   end
 
   def test_jsonb_parsing
@@ -76,7 +105,7 @@ class BaseObjectsTest < Minitest::Test
 
   def test_serialization
     record = TestObjectQuery.with(name: 'Test User').first
-    
+
     expected_hash = {
       "name" => "Test User",
       "email" => "test@example.com",
@@ -90,11 +119,22 @@ class BaseObjectsTest < Minitest::Test
           "theme" => "dark"
         }
       },
-      "tags" => ["ruby", "rails"]
+      "tags" => ["ruby", "rails"],
+      "pg_int_array" => [1, 2, 3],
+      "pg_float_array" => [1.5, 2.5, 3.5],
+      "pg_string_array" => ["foo", "bar"],
+      "pg_boolean_array" => [true, false, true],
+      "empty_array" => []
     }
-    
+
     assert_equal expected_hash, record.to_h
     assert_equal expected_hash.to_json, record.to_json
+
+    # Extra assertions to verify specific parts
+    assert_equal [1, 2, 3], record.to_h["pg_int_array"]
+    assert_equal ["foo", "bar"], record.to_h["pg_string_array"]
+    assert_instance_of Array, record.to_h["empty_array"]
+    assert_empty record.to_h["empty_array"]
   end
 
   def test_pattern_matching
@@ -157,5 +197,24 @@ class BaseObjectsTest < Minitest::Test
 
     assert record.changed?
     assert_equal({"name" => ["Test User", "Changed"]}, record.changes)
+  end
+
+  def test_pg_array_parsing
+    @mock_connection.results = [{
+      "name" => "Test User",
+      "pg_int_array" => "{1,2,3}",
+      "pg_float_array" => "{1.5,2.5,3.5}",
+      "pg_string_array" => '{foo,bar,"baz,qux"}',
+      "empty_array" => "{}",
+      "pg_boolean_array" => "{true,false,true}"
+    }]
+
+    record = TestObjectQuery.with(name: 'Test User').first
+
+    assert_equal [1, 2, 3], record.pg_int_array
+    assert_equal [1.5, 2.5, 3.5], record.pg_float_array
+    assert_equal ['foo', 'bar', 'baz,qux'], record.pg_string_array
+    assert_equal [], record.empty_array
+    assert_equal [true, false, true], record.pg_boolean_array
   end
 end

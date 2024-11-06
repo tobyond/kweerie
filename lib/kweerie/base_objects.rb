@@ -39,10 +39,22 @@ module Kweerie
               value.to_f
             when /^(true|false)$/i # Boolean check
               value.downcase == "true"
-            when /^[\[{]/ # JSON/JSONB check
+            when /^{.*}$/ # Could be PG array or JSON
+              if value.start_with?("{") && value.end_with?("}") && !value.include?('"=>') && !value.include?(": ")
+                # PostgreSQL array (simple heuristic: no "=>" or ":" suggests it's not JSON)
+                parse_pg_array(value)
+              else
+                # Attempt JSON parse
+                begin
+                  parsed = JSON.parse(value)
+                  deep_stringify_keys(parsed)
+                rescue JSON::ParserError
+                  value
+                end
+              end
+            when /^[\[{]/ # Pure JSON (arrays starting with [ or other JSON objects)
               begin
                 parsed = JSON.parse(value)
-                # Use string keys for consistency in output
                 deep_stringify_keys(parsed)
               rescue JSON::ParserError
                 value
@@ -61,6 +73,29 @@ module Kweerie
             attrs.each do |name, value|
               casted_value = type_cast_value(value)
               instance_variable_set("@#{name}", casted_value)
+            end
+          end
+          define_method :parse_pg_array do |value|
+            # Remove the curly braces
+            clean_value = value.gsub(/^{|}$/, "")
+            return [] if clean_value.empty?
+
+            # Split on comma, but not within quoted strings
+            elements = clean_value.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
+
+            elements.map do |element|
+              case element
+              when /^\d+$/ # Integer
+                element.to_i
+              when /^\d*\.\d+$/ # Float
+                element.to_f
+              when /^(true|false)$/i # Boolean
+                element.downcase == "true"
+              when /^"(.*)"$/ # Quoted string
+                ::Regexp.last_match(1)
+              else
+                element
+              end
             end
           end
 

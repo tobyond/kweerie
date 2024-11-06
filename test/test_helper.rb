@@ -57,7 +57,7 @@ class MockPGConnection
 
   def initialize
     @exec_params_calls = []
-    @results = [{
+    @results = [{ 
       "name" => "Test User",
       "email" => "test@example.com",
       "created_at" => "2024-01-01 10:00:00",
@@ -65,7 +65,12 @@ class MockPGConnection
       "score" => "3.14",
       "active" => "true",
       "metadata" => '{"role": "admin", "preferences": {"theme": "dark"}}',
-      "tags" => '["ruby", "rails"]'
+      "tags" => '["ruby", "rails"]',
+      "pg_int_array" => "{1,2,3}",
+      "pg_float_array" => "{1.5,2.5,3.5}",
+      "pg_string_array" => "{foo,bar}",
+      "pg_boolean_array" => "{true,false,true}",
+      "empty_array" => "{}"
     }]
   end
 
