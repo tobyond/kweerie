@@ -70,7 +70,7 @@ users = UserSearch.with(
 )
 
 user = users.first
-user.name         # => "Claude"
+user.name         # => "Eclipsoid"
 user.created_at   # => 2024-01-01 00:00:00 +0000 (Time object)
 ```
 
@@ -155,13 +155,13 @@ Both methods work with `Kweerie::Base` and `Kweerie::BaseObjects`, returning arr
 class AllUsers < Kweerie::Base
 end
 users = AllUsers.all
-# => [{"id" => 1, "name" => "Claude"}, ...]
+# => [{"id" => 1, "name" => "Eclipsoid"}, ...]
 
 # Returns array of objects
 class AllUsers < Kweerie::BaseObjects
 end
 users = AllUsers.all
-# => [#<AllUsers id=1 name="Claude">, ...]
+# => [#<AllUsers id=1 name="Eclipsoid">, ...]
 ```
 
 ### Automatic Type Casting
@@ -181,7 +181,7 @@ SELECT
 FROM users;
 
 # In your Ruby code
-user = UserSearch.with(name: 'Claude').first
+user = UserSearch.with(name: 'Eclipsoid').first
 
 user.created_at   # => Time object
 user.age          # => Integer
@@ -220,7 +220,7 @@ BaseObjects provide several useful methods:
 
 ```ruby
 # Hash-like access
-user[:name]                    # => "Claude"
+user[:name]                    # => "Eclipsoid"
 user.fetch(:email, 'N/A')      # => Returns 'N/A' if email is nil
 
 # Serialization
@@ -250,7 +250,7 @@ create_table :users do |t|
 end
 
 # In your query
-user = UserSearch.with(name: 'Claude').first
+user = UserSearch.with(name: 'Eclipsoid').first
 
 user.preferred_ordering  # => [1, 3, 2]
 user.tags                 # => ["ruby", "rails"]
