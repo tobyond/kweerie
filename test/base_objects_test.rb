@@ -4,6 +4,8 @@ require "test_helper"
 
 class TestObjectQuery < Kweerie::BaseObjects
   bind :name, as: '$1'
+
+  attr_accessor :custom_attr
 end
 
 class BaseObjectsTest < Minitest::Test
@@ -216,5 +218,21 @@ class BaseObjectsTest < Minitest::Test
     assert_equal ['foo', 'bar', 'baz,qux'], record.pg_string_array
     assert_equal [], record.empty_array
     assert_equal [true, false, true], record.pg_boolean_array
+  end
+
+  def test_returns_instances_of_calling_class
+    record = TestObjectQuery.with(name: 'Nayme').first
+
+    assert record.is_a?(TestObjectQuery)
+    assert record.respond_to?(:custom_attr)
+
+    # Test that we can use the attr_accessor
+    record.custom_attr = "test"
+    assert_equal "test", record.custom_attr
+  end
+
+  def test_class_name_in_inspect
+    record = TestObjectQuery.with(name: 'Nayme').first
+    assert_match(/^#<TestObjectQuery /, record.inspect)
   end
 end

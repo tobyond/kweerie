@@ -20,13 +20,27 @@ module Kweerie
       private
 
       def generate_result_class(attribute_names)
-        @generate_result_class ||= Class.new do
+        @generate_result_class ||= Class.new(self) do
           # Include comparison and serialization modules
           include Comparable
 
           # Define attr_readers for all columns
           attribute_names.each do |name|
             attr_reader name
+          end
+
+          define_method :initialize do |attrs|
+            # Store both raw and casted versions
+            @_raw_original_attributes = attrs.dup
+            @_original_attributes = attrs.transform_keys(&:to_s).transform_values do |value|
+              type_cast_value(value)
+            end
+
+            attrs.each do |name, value|
+              casted_value = type_cast_value(value)
+              instance_variable_set("@#{name}", casted_value)
+            end
+            super() if defined?(super)
           end
 
           define_method :type_cast_value do |value|
@@ -64,17 +78,6 @@ module Kweerie
             end
           end
 
-          define_method :initialize do |attrs|
-            # Store original attributes with the same type casting
-            @_original_attributes = attrs.transform_keys(&:to_s).transform_values do |value|
-              type_cast_value(value)
-            end
-
-            attrs.each do |name, value|
-              casted_value = type_cast_value(value)
-              instance_variable_set("@#{name}", casted_value)
-            end
-          end
           define_method :parse_pg_array do |value|
             # Remove the curly braces
             clean_value = value.gsub(/^{|}$/, "")
@@ -115,7 +118,7 @@ module Kweerie
             attrs = attribute_names.map do |name|
               "#{name}=#{instance_variable_get("@#{name}").inspect}"
             end.join(" ")
-            "#<#{self.class.name || "Record"} #{attrs}>"
+            "#<#{self.class.superclass.name} #{attrs}>"
           end
 
           # Hash-like access
@@ -182,6 +185,11 @@ module Kweerie
           # Original attributes access
           define_method :original_attributes do
             @_original_attributes
+          end
+
+          # Raw attributes access
+          define_method :raw_original_attributes do
+            @_raw_original_attributes
           end
 
           # ActiveModel-like changes tracking
