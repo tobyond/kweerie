@@ -47,10 +47,10 @@ Execute your query:
 
 ```ruby
 results = UserSearch.with(
-  name: 'John%',
+  name: 'Eclipsoid%',
   email: '%@example.com'
 )
-# => [{"id"=>9981, "name"=>"John Doe", "email"=>"johndoe@example.com"}]
+# => [{"id"=>109981, "name"=>"Eclipsoid Doe", "email"=>"eclipsoiddoe@example.com"}]
 ```
 
 ### Object Mapping
