@@ -8,6 +8,9 @@ class TestObjectQuery < Kweerie::BaseObjects
   attr_accessor :custom_attr
 end
 
+class NoBindingsObjectQuery < Kweerie::BaseObjects
+end
+
 class BaseObjectsTest < Minitest::Test
   include KweerieTestHelpers
 
@@ -234,5 +237,25 @@ class BaseObjectsTest < Minitest::Test
   def test_class_name_in_inspect
     record = TestObjectQuery.with(name: 'Nayme').first
     assert_match(/^#<TestObjectQuery /, record.inspect)
+  end
+
+  def test_all_method_for_no_bindings
+    create_sql_file(NoBindingsObjectQuery, <<~SQL)
+    SELECT 
+    'Test User' as name,
+      'test@example.com' as email
+    SQL
+
+    results = NoBindingsObjectQuery.all
+    assert_instance_of Array, results
+    assert results.first.is_a?(NoBindingsObjectQuery)
+    assert_equal 'Test User', results.first.name
+  end
+
+  def test_all_raises_error_with_bindings
+    error = assert_raises(ArgumentError) do
+      TestObjectQuery.all
+    end
+    assert_match(/Cannot use .all on queries with bindings/, error.message)
   end
 end

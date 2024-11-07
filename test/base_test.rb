@@ -7,6 +7,9 @@ class TestQuery < Kweerie::Base
   bind :email, as: "$2"
 end
 
+class NoBindingsQuery < Kweerie::Base
+end
+
 class BaseTest < Minitest::Test
   include KweerieTestHelpers
 
@@ -53,5 +56,20 @@ class BaseTest < Minitest::Test
 
     last_query = @mock_connection.exec_params_calls.last
     assert_equal ["Test User", "test@example.com"], last_query[:params]
+  end
+
+  def test_all_method_for_no_bindings
+    create_sql_file(NoBindingsQuery, "SELECT * FROM users")
+
+    results = NoBindingsQuery.all
+    assert_instance_of Array, results
+  end
+
+  def test_all_raises_error_with_bindings
+    error = assert_raises(ArgumentError) do
+      TestQuery.all
+    end
+
+    assert_match(/Cannot use .all on queries with bindings/, error.message)
   end
 end

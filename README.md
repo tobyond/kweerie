@@ -74,6 +74,96 @@ user.name         # => "Claude"
 user.created_at   # => 2024-01-01 00:00:00 +0000 (Time object)
 ```
 
+## Querying
+
+Kweerie provides two main ways to execute queries based on whether they have parameters:
+
+### Parameterized Queries
+
+When your query needs parameters, use the `.with` method:
+
+```ruby
+class UsersByDepartment < Kweerie::Base
+  bind :department, as: '$1'
+  bind :active, as: '$2'
+end
+
+# app/queries/users_by_department.sql
+SELECT *
+FROM users
+WHERE department = $1
+  AND active = $2;
+
+# Using the query
+users = UsersByDepartment.with(
+  department: 'Engineering',
+  active: true
+)
+```
+
+### Parameter-free Queries
+
+For queries that don't require any parameters, you can use the more semantically appropriate `.all` method:
+
+```ruby
+class AllUsers < Kweerie::Base
+end
+
+# app/queries/all_users.sql
+SELECT *
+FROM users
+WHERE active = true
+ORDER BY created_at DESC;
+
+# Using the query
+users = AllUsers.all
+```
+
+The `.all` method provides a cleaner interface when you're not binding any parameters. It will raise an error if you try to use it on a query class that has parameter bindings:
+
+```ruby
+# This will raise an ArgumentError
+UsersByDepartment.all  
+# => ArgumentError: Cannot use .all on queries with bindings. Use .with instead.
+```
+
+### Choosing Between .all and .with
+
+- Use `.all` when your SQL query is completely static with no parameters
+- Use `.with` when you need to pass parameters to your query
+- Even for parameterized queries, you can use `.with` without arguments if all parameters are optional
+
+```ruby
+# A query with no parameters
+class RecentUsers < Kweerie::Base
+end
+RecentUsers.all  # ✓ Clean and semantic
+RecentUsers.with # ✓ Works but less semantic
+
+# A query with parameters
+class UsersByStatus < Kweerie::Base
+  bind :status, as: '$1'
+end
+UsersByStatus.all                    # ✗ Raises ArgumentError
+UsersByStatus.with(status: 'active') # ✓ Correct usage
+```
+
+Both methods work with `Kweerie::Base` and `Kweerie::BaseObjects`, returning arrays of hashes or objects respectively:
+
+```ruby
+# Returns array of hashes
+class AllUsers < Kweerie::Base
+end
+users = AllUsers.all
+# => [{"id" => 1, "name" => "Claude"}, ...]
+
+# Returns array of objects
+class AllUsers < Kweerie::BaseObjects
+end
+users = AllUsers.all
+# => [#<AllUsers id=1 name="Claude">, ...]
+```
+
 ### Automatic Type Casting
 
 BaseObjects automatically casts common PostgreSQL types to their Ruby equivalents:
@@ -147,7 +237,7 @@ user.changes                   # => Hash of changes with [old, new] values
 user.original_attributes       # => Original attributes from DB
 ```
 
-## PostgreSQL Array Support
+### PostgreSQL Array Support
 
 BaseObjects handles PostgreSQL arrays by converting them to Ruby arrays with proper type casting:
 
@@ -167,7 +257,7 @@ user.tags                 # => ["ruby", "rails"]
 user.scores              # => [98.5, 87.2, 92.0]
 ```
 
-## Performance Considerations
+### Performance Considerations
 
 BaseObjects creates a unique class for each query result set, with the following optimizations:
 
@@ -179,7 +269,7 @@ BaseObjects creates a unique class for each query result set, with the following
 
 For queries where you don't need the object interface, use `Kweerie::Base` instead for slightly better performance.
 
-### Rails Generator
+## Rails Generator
 
 If you're using Rails, you can use the generator to create new query files:
 
@@ -193,7 +283,7 @@ rails generate kweerie UserSearch email name
 
 This will create both the Ruby class and SQL file with the appropriate structure.
 
-### Configuration
+## Configuration
 
 By default, Kweerie uses ActiveRecord's connection if available. You can configure this and other options:
 
@@ -222,7 +312,7 @@ end
 - ✅ Configurable connection handling
 - ✅ Parameter validation
 
-## Why Kweerie?
+### Why Kweerie?
 
 - **SQL Views Overkill**: When a database view is too heavy-handed but you still want to keep SQL separate from Ruby
 - **Version Control**: Keep your SQL under version control alongside your Ruby code
@@ -230,11 +320,11 @@ end
 - **Simple Interface**: Clean, simple API for executing parameterized queries
 - **Rails Integration**: Works seamlessly with Rails and ActiveRecord
 
-## Development
+### Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests.
 
-## Contributing
+### Contributing
 
 1. Fork it
 2. Create your feature branch (`git checkout -b my-new-feature`)
@@ -242,7 +332,7 @@ After checking out the repo, run `bin/setup` to install dependencies. Then, run 
 4. Push to the branch (`git push origin my-new-feature`)
 5. Create a new Pull Request
 
-## License
+### License
 
 The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
 

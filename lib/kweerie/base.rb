@@ -45,6 +45,12 @@ module Kweerie
         result.to_a
       end
 
+      def all
+        raise ArgumentError, "Cannot use .all on queries with bindings. Use .with instead." if bindings.any?
+
+        with
+      end
+
       private
 
       def validate_params!(params)
