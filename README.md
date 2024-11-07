@@ -65,7 +65,7 @@ end
 
 # Returns array of objects instead of hashes
 users = UserSearch.with(
-  name: 'Claude',
+  name: 'Eclipsoid',
   created_at: '2024-01-01'
 )
 

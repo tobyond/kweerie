@@ -3,7 +3,7 @@
 require "test_helper"
 
 class TestObjectQuery < Kweerie::BaseObjects
-  bind :name, as: '$1'
+  bind :name, as: "$1"
 
   attr_accessor :custom_attr
 end
@@ -17,7 +17,7 @@ class BaseObjectsTest < Minitest::Test
   def setup
     super
     create_sql_file(TestObjectQuery, <<~SQL)
-      SELECT 
+      SELECT#{" "}
         'Test User' as name,
         'test@example.com' as email,
         '2024-01-01 10:00:00' as created_at,
@@ -32,11 +32,11 @@ class BaseObjectsTest < Minitest::Test
   end
 
   def test_returns_objects_with_attribute_readers
-    result = TestObjectQuery.with(name: 'Test User')
+    result = TestObjectQuery.with(name: "Test User")
     record = result.first
-    
-    assert_equal 'Test User', record.name
-    assert_equal 'test@example.com', record.email
+
+    assert_equal "Test User", record.name
+    assert_equal "test@example.com", record.email
   end
 
   def test_type_casting
@@ -54,7 +54,7 @@ class BaseObjectsTest < Minitest::Test
       "empty_array" => "{}"
     }]
 
-    record = TestObjectQuery.with(name: 'Test User').first
+    record = TestObjectQuery.with(name: "Test User").first
 
     # Test basic types
     assert_instance_of Time, record.created_at
@@ -69,47 +69,47 @@ class BaseObjectsTest < Minitest::Test
 
     # Test JSON array
     assert_instance_of Array, record.tags
-    assert_equal ["ruby", "rails"], record.tags
+    assert_equal %w[ruby rails], record.tags
 
     # Test PostgreSQL arrays
     assert_equal [1, 2, 3], record.pg_int_array
-    assert_equal ["foo", "bar"], record.pg_string_array
+    assert_equal %w[foo bar], record.pg_string_array
     assert_equal [], record.empty_array
   end
 
   def test_jsonb_parsing
-    record = TestObjectQuery.with(name: 'Test User').first
-    
+    record = TestObjectQuery.with(name: "Test User").first
+
     # Test hash-like JSONB
     assert_instance_of Hash, record.metadata
     assert_equal "admin", record.metadata["role"]
     assert_equal "dark", record.metadata["preferences"]["theme"]
-    
+
     # Test array-like JSONB
     assert_instance_of Array, record.tags
-    assert_equal ["ruby", "rails"], record.tags
+    assert_equal %w[ruby rails], record.tags
   end
 
   def test_hash_like_access
-    record = TestObjectQuery.with(name: 'Test User').first
-    
-    assert_equal 'Test User', record[:name]
-    assert_equal 'test@example.com', record.fetch(:email)
-    assert_equal 'default', record.fetch(:missing, 'default')
+    record = TestObjectQuery.with(name: "Test User").first
+
+    assert_equal "Test User", record[:name]
+    assert_equal "test@example.com", record.fetch(:email)
+    assert_equal "default", record.fetch(:missing, "default")
   end
 
   def test_comparison
-    result = TestObjectQuery.with(name: 'Test User')
+    result = TestObjectQuery.with(name: "Test User")
     record1 = result.first
     record2 = result.first
-    
+
     assert_equal record1, record2
     assert record1.eql?(record2)
     assert_equal record1.hash, record2.hash
   end
 
   def test_serialization
-    record = TestObjectQuery.with(name: 'Test User').first
+    record = TestObjectQuery.with(name: "Test User").first
 
     expected_hash = {
       "name" => "Test User",
@@ -124,10 +124,10 @@ class BaseObjectsTest < Minitest::Test
           "theme" => "dark"
         }
       },
-      "tags" => ["ruby", "rails"],
+      "tags" => %w[ruby rails],
       "pg_int_array" => [1, 2, 3],
       "pg_float_array" => [1.5, 2.5, 3.5],
-      "pg_string_array" => ["foo", "bar"],
+      "pg_string_array" => %w[foo bar],
       "pg_boolean_array" => [true, false, true],
       "empty_array" => []
     }
@@ -137,13 +137,13 @@ class BaseObjectsTest < Minitest::Test
 
     # Extra assertions to verify specific parts
     assert_equal [1, 2, 3], record.to_h["pg_int_array"]
-    assert_equal ["foo", "bar"], record.to_h["pg_string_array"]
+    assert_equal %w[foo bar], record.to_h["pg_string_array"]
     assert_instance_of Array, record.to_h["empty_array"]
     assert_empty record.to_h["empty_array"]
   end
 
   def test_pattern_matching
-    record = TestObjectQuery.with(name: 'Test User').first
+    record = TestObjectQuery.with(name: "Test User").first
 
     # Test basic pattern matching
     case record
@@ -182,18 +182,18 @@ class BaseObjectsTest < Minitest::Test
 
   def test_empty_results
     @mock_connection.results = []
-    result = TestObjectQuery.with(name: 'Nonexistent')
+    result = TestObjectQuery.with(name: "Nonexistent")
     assert_equal [], result
   end
 
   def test_comparable
-    results = TestObjectQuery.with(name: 'Test User')
+    results = TestObjectQuery.with(name: "Test User")
     sorted_results = results.sort_by(&:age)
     assert_equal results, sorted_results
   end
 
   def test_changes_tracking
-    record = TestObjectQuery.with(name: 'Test User').first
+    record = TestObjectQuery.with(name: "Test User").first
     assert_equal record.to_h, record.original_attributes
 
     # Can't actually modify the record since attrs are read-only,
@@ -201,7 +201,7 @@ class BaseObjectsTest < Minitest::Test
     record.instance_variable_set("@name", "Changed")
 
     assert record.changed?
-    assert_equal({"name" => ["Test User", "Changed"]}, record.changes)
+    assert_equal({ "name" => ["Test User", "Changed"] }, record.changes)
   end
 
   def test_pg_array_parsing
@@ -214,17 +214,17 @@ class BaseObjectsTest < Minitest::Test
       "pg_boolean_array" => "{true,false,true}"
     }]
 
-    record = TestObjectQuery.with(name: 'Test User').first
+    record = TestObjectQuery.with(name: "Test User").first
 
     assert_equal [1, 2, 3], record.pg_int_array
     assert_equal [1.5, 2.5, 3.5], record.pg_float_array
-    assert_equal ['foo', 'bar', 'baz,qux'], record.pg_string_array
+    assert_equal ["foo", "bar", "baz,qux"], record.pg_string_array
     assert_equal [], record.empty_array
     assert_equal [true, false, true], record.pg_boolean_array
   end
 
   def test_returns_instances_of_calling_class
-    record = TestObjectQuery.with(name: 'Nayme').first
+    record = TestObjectQuery.with(name: "Nayme").first
 
     assert record.is_a?(TestObjectQuery)
     assert record.respond_to?(:custom_attr)
@@ -235,21 +235,21 @@ class BaseObjectsTest < Minitest::Test
   end
 
   def test_class_name_in_inspect
-    record = TestObjectQuery.with(name: 'Nayme').first
+    record = TestObjectQuery.with(name: "Nayme").first
     assert_match(/^#<TestObjectQuery /, record.inspect)
   end
 
   def test_all_method_for_no_bindings
     create_sql_file(NoBindingsObjectQuery, <<~SQL)
-    SELECT 
-    'Test User' as name,
-      'test@example.com' as email
+      SELECT#{" "}
+      'Test User' as name,
+        'test@example.com' as email
     SQL
 
     results = NoBindingsObjectQuery.all
     assert_instance_of Array, results
     assert results.first.is_a?(NoBindingsObjectQuery)
-    assert_equal 'Test User', results.first.name
+    assert_equal "Test User", results.first.name
   end
 
   def test_all_raises_error_with_bindings

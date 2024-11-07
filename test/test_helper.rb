@@ -57,7 +57,7 @@ class MockPGConnection
 
   def initialize
     @exec_params_calls = []
-    @results = [{ 
+    @results = [{
       "name" => "Test User",
       "email" => "test@example.com",
       "created_at" => "2024-01-01 10:00:00",
