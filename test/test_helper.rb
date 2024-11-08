@@ -24,31 +24,39 @@ end
 module KweerieTestHelpers
   def setup
     Kweerie.reset_configuration!
-
     @mock_connection = MockPGConnection.new
     Kweerie.configure do |config|
       config.connection_provider = -> { @mock_connection }
     end
 
-    # Create temp dir and set Rails.root
     @temp_dir = File.join(Dir.pwd, "test/temp")
-    FileUtils.mkdir_p(@temp_dir)
-    Rails.root = Pathname.new(@temp_dir)
+    @queries_dir = File.join(@temp_dir, "queries")
+    FileUtils.mkdir_p(@queries_dir)
 
-    # Now configure sql_paths
+    Rails.root = Pathname.new(@temp_dir)
     Kweerie.configure do |config|
-      config.sql_paths = -> { [""] } # Empty string because we're already at the root
+      config.sql_paths = -> { [@queries_dir] }
     end
+  end
+
+  def create_sql_file(class_name, content, location = :default)
+    case location
+    when :root
+      path = File.join(@temp_dir, class_name)
+    when :relative
+      path = File.join(@queries_dir, class_name)
+    else
+      filename = "#{class_name.to_s.underscore}.sql"
+      path = File.join(@queries_dir, filename)
+    end
+    FileUtils.mkdir_p(File.dirname(path))
+    File.write(path, content)
+    path
   end
 
   def teardown
     FileUtils.rm_rf(@temp_dir)
     Rails.root = nil
-  end
-
-  def create_sql_file(class_name, content)
-    filename = "#{class_name.to_s.underscore}.sql"
-    File.write(File.join(@temp_dir, filename), content)
   end
 end
 

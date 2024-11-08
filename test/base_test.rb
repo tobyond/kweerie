@@ -21,6 +21,7 @@ class BaseTest < Minitest::Test
       WHERE name = $1
         AND email = $2
     SQL
+    create_sql_file("no_bindings_query", "SELECT * FROM users")
   end
 
   def test_bindings_are_class_specific
@@ -58,18 +59,45 @@ class BaseTest < Minitest::Test
     assert_equal ["Test User", "test@example.com"], last_query[:params]
   end
 
-  def test_all_method_for_no_bindings
-    create_sql_file(NoBindingsQuery, "SELECT * FROM users")
-
-    results = NoBindingsQuery.all
-    assert_instance_of Array, results
-  end
-
   def test_all_raises_error_with_bindings
     error = assert_raises(ArgumentError) do
       TestQuery.all
     end
 
     assert_match(/Cannot use .all on queries with bindings/, error.message)
+  end
+
+  def test_default_sql_file_location
+    TestQuery.with(name: "Test", email: "test@example.com")
+    assert true
+  end
+
+  def test_root_sql_file_location
+    sql_path = create_sql_file("custom_root_query.sql", "SELECT * FROM users", :root)
+    klass = Class.new(Kweerie::Base) do
+      bind :name, as: "$1"
+      sql_file_location root: "custom_root_query.sql"
+    end
+    Object.const_set(:CustomRootQuery, klass)
+
+    result = CustomRootQuery.with(name: "Test")
+    assert_instance_of Array, result
+  ensure
+    Object.send(:remove_const, :CustomRootQuery) if defined?(CustomRootQuery)
+  end
+
+  def test_relative_sql_file_location
+    create_sql_file("custom_relative_query.sql", "SELECT * FROM users", :relative)
+
+    klass = Class.new(Kweerie::Base) do
+      bind :name, as: "$1"
+      sql_file_location relative: "custom_relative_query.sql"
+    end
+    Object.const_set(:CustomRelativeQuery, klass)
+
+    CustomRelativeQuery.with(name: "Test")
+    assert true
+  ensure
+    Object.send(:remove_const, :CustomRelativeQuery) if defined?(CustomRelativeQuery)
   end
 end

@@ -17,7 +17,7 @@ class BaseObjectsTest < Minitest::Test
   def setup
     super
     create_sql_file(TestObjectQuery, <<~SQL)
-      SELECT#{" "}
+      SELECT
         'Test User' as name,
         'test@example.com' as email,
         '2024-01-01 10:00:00' as created_at,
@@ -29,6 +29,7 @@ class BaseObjectsTest < Minitest::Test
       FROM users
       WHERE name = $1
     SQL
+    create_sql_file(NoBindingsObjectQuery, "SELECT * FROM users")
   end
 
   def test_returns_objects_with_attribute_readers

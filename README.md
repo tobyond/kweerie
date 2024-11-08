@@ -257,6 +257,31 @@ user.tags                 # => ["ruby", "rails"]
 user.scores              # => [98.5, 87.2, 92.0]
 ```
 
+### SQL File Location
+
+By default, Kweerie looks for SQL files adjacent to their Ruby query classes. You can customize this behavior:
+
+```ruby
+# Default behavior - looks for user_search.sql next to this file
+class UserSearch < Kweerie::Base
+end
+
+# Specify absolute path from Rails root
+class UserSearch < Kweerie::Base
+  sql_file_location root: 'db/queries/complex_user_search.sql'
+end
+
+# Specify path relative to the Ruby file
+class UserSearch < Kweerie::Base
+  sql_file_location relative: '../sql/user_search.sql'
+end
+
+# Explicitly use default behavior
+class UserSearch < Kweerie::Base
+  sql_file_location :default
+end
+```
+
 ### Performance Considerations
 
 BaseObjects creates a unique class for each query result set, with the following optimizations:
@@ -312,14 +337,6 @@ end
 - ✅ Configurable connection handling
 - ✅ Parameter validation
 
-### Why Kweerie?
-
-- **SQL Views Overkill**: When a database view is too heavy-handed but you still want to keep SQL separate from Ruby
-- **Version Control**: Keep your SQL under version control alongside your Ruby code
-- **Parameter Safety**: Built-in parameter binding prevents SQL injection
-- **Simple Interface**: Clean, simple API for executing parameterized queries
-- **Rails Integration**: Works seamlessly with Rails and ActiveRecord
-
 ### Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests.
@@ -337,6 +354,9 @@ After checking out the repo, run `bin/setup` to install dependencies. Then, run 
 The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
 
 ## FAQ
+
+**Q: Why does Kweerie exist?**  
+A: PostgreSQL DB views are powerful and (honestly) preferred for what kweerie offers, but they need migrations to change, which isn't always practical when you just need a query. Kweerie provides that flexibility. Plus, SQL is more readable in a single file than when nested in Ruby code. SQL is powerful and doesn’t always need to be hidden behind abstractions.
 
 **Q: Why PostgreSQL only?**  
 A: Kweerie uses PostgreSQL-specific features for parameter binding and result handling. Supporting other databases would require different parameter binding syntax and result handling.
