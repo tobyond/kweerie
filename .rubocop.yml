@@ -41,3 +41,6 @@ Gemspec/RequiredRubyVersion:
 
 Metrics/BlockLength: 
   Enabled: false
+
+Naming/AccessorMethodName:
+  Enabled: false

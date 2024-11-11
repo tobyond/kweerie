@@ -100,40 +100,7 @@ module Kweerie
       end
 
       def sql_path
-        @sql_path ||=
-          if @sql_file_location&.key?(:root)
-            raise ConfigurationError, "Root path requires Rails to be defined" unless defined?(Rails)
-
-            path = Rails.root.join(@sql_file_location[:root]).to_s
-            raise SQLFileNotFound, "Could not find SQL file at #{path}" unless File.exist?(path)
-
-            path
-
-          elsif @sql_file_location&.key?(:relative)
-            configured_paths = Kweerie.configuration.sql_paths.call
-            sql_file = configured_paths.map do |path|
-              full_path = File.join(path, @sql_file_location[:relative])
-              full_path if File.exist?(full_path)
-            end.compact.first
-            unless sql_file
-              raise SQLFileNotFound,
-                    "Could not find SQL file #{@sql_file_location[:relative]}"
-            end
-
-            sql_file
-          else # default behavior
-            sql_filename = "#{name.underscore}.sql"
-            configured_paths = Kweerie.configuration.sql_paths.call
-
-            sql_file = configured_paths.map do |path|
-              full_path = File.join(path, sql_filename)
-              full_path if File.exist?(full_path)
-            end.compact.first
-
-            raise SQLFileNotFound, "SQL file not found for #{name}" unless sql_file
-
-            sql_file
-          end
+        @sql_path ||= SQLPathResolver.new(@sql_file_location, name).resolve
       end
 
       def sql_content

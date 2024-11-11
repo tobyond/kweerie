@@ -73,7 +73,7 @@ class BaseTest < Minitest::Test
   end
 
   def test_root_sql_file_location
-    sql_path = create_sql_file("custom_root_query.sql", "SELECT * FROM users", :root)
+    create_sql_file("custom_root_query.sql", "SELECT * FROM users", :root)
     klass = Class.new(Kweerie::Base) do
       bind :name, as: "$1"
       sql_file_location root: "custom_root_query.sql"
