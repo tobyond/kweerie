@@ -55,10 +55,10 @@ results = UserSearch.with(
 
 ### Object Mapping
 
-While `Kweerie::Base` returns plain hashes, you can use `Kweerie::BaseObjects` to get typed Ruby objects with proper attribute methods:
+While `Kweerie::Base` returns plain hashes, you can use `Kweerie::BaseObject` to get typed Ruby objects with proper attribute methods:
 
 ```ruby
-class UserSearch < Kweerie::BaseObjects
+class UserSearch < Kweerie::BaseObject
   bind :name, as: '$1'
   bind :created_at, as: '$2'
 end
@@ -148,7 +148,7 @@ UsersByStatus.all                    # ✗ Raises ArgumentError
 UsersByStatus.with(status: 'active') # ✓ Correct usage
 ```
 
-Both methods work with `Kweerie::Base` and `Kweerie::BaseObjects`, returning arrays of hashes or objects respectively:
+Both methods work with `Kweerie::Base` and `Kweerie::BaseObject`, returning arrays of hashes or objects respectively:
 
 ```ruby
 # Returns array of hashes
@@ -158,65 +158,15 @@ users = AllUsers.all
 # => [{"id" => 1, "name" => "Eclipsoid"}, ...]
 
 # Returns array of objects
-class AllUsers < Kweerie::BaseObjects
+class AllUsers < Kweerie::BaseObject
 end
 users = AllUsers.all
 # => [#<AllUsers id=1 name="Eclipsoid">, ...]
 ```
 
-### Automatic Type Casting
-
-BaseObjects automatically casts common PostgreSQL types to their Ruby equivalents:
-
-```ruby
-# In your SQL file
-SELECT 
-  name,
-  created_at,                    -- timestamp
-  age::integer,                  -- integer
-  score::float,                  -- float
-  active::boolean,               -- boolean
-  metadata::jsonb,               -- jsonb
-  tags::jsonb                    -- jsonb array
-FROM users;
-
-# In your Ruby code
-user = UserSearch.with(name: 'Eclipsoid').first
-
-user.created_at   # => Time object
-user.age          # => Integer
-user.score        # => Float
-user.active       # => true/false
-user.metadata     # => Hash with string keys
-user.tags         # => Array
-
-# Nested JSONB data is properly accessible
-user.metadata["role"]                    # => "admin"
-user.metadata["preferences"]["theme"]    # => "dark"
-```
-
-### Pattern Matching Support
-
-BaseObjects support Ruby's pattern matching syntax:
-
-```ruby
-case user
-in { name:, metadata: { role: "admin" } }
-  puts "Admin user: #{name}"
-in { name:, metadata: { role: "user" } }
-  puts "Regular user: #{name}"
-end
-
-# Nested pattern matching
-case user
-in { metadata: { preferences: { theme: "dark" } } }
-  puts "Dark theme user"
-end
-```
-
 ### Object Interface
 
-BaseObjects provide several useful methods:
+BaseObject provide several useful methods:
 
 ```ruby
 # Hash-like access
@@ -230,31 +180,6 @@ user.to_json                   # => JSON string
 # Comparison
 user1 == user2                 # Compare all attributes
 users.sort_by(&:created_at)    # Sortable
-
-# Change tracking
-user.changed?                  # => Check if any attributes changed
-user.changes                   # => Hash of changes with [old, new] values
-user.original_attributes       # => Original attributes from DB
-```
-
-### PostgreSQL Array Support
-
-BaseObjects handles PostgreSQL arrays by converting them to Ruby arrays with proper type casting:
-
-```ruby
-# In your PostgreSQL schema
-create_table :users do |t|
-  t.integer :preferred_ordering, array: true, default: []
-  t.string :tags, array: true
-  t.float :scores, array: true
-end
-
-# In your query
-user = UserSearch.with(name: 'Eclipsoid').first
-
-user.preferred_ordering  # => [1, 3, 2]
-user.tags                 # => ["ruby", "rails"]
-user.scores              # => [98.5, 87.2, 92.0]
 ```
 
 ### SQL File Location
@@ -282,9 +207,90 @@ class UserSearch < Kweerie::Base
 end
 ```
 
+## Type Casting
+
+`cast_select` provides flexible, explicit type casting for your query result fields. Instead of relying on automatic type inference, you can specify exactly how each field should be cast. By default it will return as the string from the database.
+
+### Basic Usage
+
+```ruby
+class UserQuery < Kweerie::BaseObjects
+  cast_select :age, as: ->(val) { val.to_i }
+  cast_select :active, as: Types::Boolean
+  cast_select :metadata, as: Types::PgJsonb
+end
+```
+
+### Casting Options
+
+#### Built-in Type Classes
+The gem includes a few built-in type classes for specific scenarios, you'll find a comprehensive amount of them in rails:
+
+```ruby
+# Boolean casting (handles various boolean representations)
+cast_select :active, as: Types::Boolean
+
+# JSONB casting (handles both objects and arrays)
+cast_select :metadata, as: Types::PgJsonb
+
+# Postgres Array casting
+cast_select :tags, as: Types::PgArray
+```
+
+#### Lambda/Proc Casting
+For simple transformations, you can use a lambda or proc:
+
+```ruby
+class ProductQuery < Kweerie::BaseObjects
+  cast_select :price, as: ->(val) { val.to_f }
+  cast_select :quantity, as: ->(val) { val.to_i }
+  cast_select :sku, as: ->(val) { val.upcase }
+end
+```
+
+#### Method Reference Casting
+You can reference an instance method for complex casting logic:
+
+```ruby
+class OrderQuery < Kweerie::BaseObjects
+  cast_select :total, as: :calculate_total
+  
+  def calculate_total(val)
+    return if val.nil?
+
+    Money.new(val)
+  end
+end
+```
+
+### Custom Type Classes
+
+For reusable, complex casting logic, you can create custom type classes, or use the ones provided by rails:
+
+```ruby
+class Types::Money
+  def cast(value)
+    return nil if value.nil?
+
+    (value.to_f * 100).to_i # Store as cents
+  end
+end
+
+class Types::PGIntArray < Types::PgArray
+  def cast(value)
+    super.map(&:to_i)  # Convert array elements to integers
+  end
+end
+
+class InvoiceQuery < Kweerie::BaseObjects
+  cast_select :amount, as: Types::Money
+  cast_select :line_items, as: Types::PGIntArray
+end
+```
+
 ### Performance Considerations
 
-BaseObjects creates a unique class for each query result set, with the following optimizations:
+BaseObject creates a unique class for each query result set, with the following optimizations:
 
 - Classes are cached and reused for subsequent queries
 - Attribute readers are defined upfront
@@ -325,9 +331,9 @@ end
 
 ## Requirements
 
-- Ruby 2.7 or higher
+- Ruby 3 or higher
 - PostgreSQL (this gem is PostgreSQL-specific and uses the `pg` gem)
-- Rails 6+ (optional, needed for the generator and default ActiveRecord integration)
+- Rails 7+ (optional, needed for the generator and default ActiveRecord integration)
 
 ## Features
 

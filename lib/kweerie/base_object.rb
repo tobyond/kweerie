@@ -4,7 +4,7 @@ require "active_support/core_ext/string"
 require "json"
 
 module Kweerie
-  class BaseObjects < Base
+  class BaseObject < Base
     class << self
       def with(params = {})
         results = super
@@ -15,6 +15,14 @@ module Kweerie
 
         # Map results to objects
         results.map { |row| result_class.new(row) }
+      end
+
+      def cast_select(field, as: nil)
+        cast_definitions[field] = as if as
+      end
+
+      def cast_definitions
+        @cast_definitions ||= {}
       end
 
       private

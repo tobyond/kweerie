@@ -118,7 +118,7 @@ module Kweerie
       #
       # === Returns
       #
-      # Array of hashes representing the query results. When using Kweerie::BaseObjects,
+      # Array of hashes representing the query results. When using Kweerie::BaseObject,
       # returns array of typed objects instead.
       #
       # === Examples
@@ -130,7 +130,7 @@ module Kweerie
       #   )
       #   # => [{"id"=>1, "name"=>"Eclipsoid", "email"=>"eclipsoid@example.com"}]
       #
-      #   # With type casting (BaseObjects)
+      #   # With type casting (BaseObject)
       #   UserSearch.with(created_after: '2024-01-01')
       #   # => [#<UserSearch id=1 created_at=2024-01-01 00:00:00 +0000>]
       #

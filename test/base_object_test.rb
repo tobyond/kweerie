@@ -2,16 +2,37 @@
 
 require "test_helper"
 
-class TestObjectQuery < Kweerie::BaseObjects
+class TestObjectQuery < Kweerie::BaseObject
   bind :name, as: "$1"
 
+  # Add explicit type casting for each field
+  cast_select :age, as: lambda(&:to_i)
+  cast_select :score, as: lambda(&:to_f)
+  cast_select :active, as: Types::Boolean
+  cast_select :metadata, as: Types::PgJsonb
+  cast_select :tags, as: Types::PgJsonb
+  cast_select :pg_int_array, as: Types::PgArray
+  cast_select :pg_float_array, as: Types::PgArray
+  cast_select :pg_string_array, as: Types::PgArray
+  cast_select :pg_boolean_array, as: Types::PgArray
+  cast_select :empty_array, as: Types::PgArray
+  cast_select :woo, as: :hoo
+
   attr_accessor :custom_attr
+
+  def hoo(val)
+    if val == "boo"
+      "hoo"
+    else
+      "moooooo"
+    end
+  end
 end
 
-class NoBindingsObjectQuery < Kweerie::BaseObjects
+class NoBindingsObjectQuery < Kweerie::BaseObject
 end
 
-class BaseObjectsTest < Minitest::Test
+class BaseObjectTest < Minitest::Test
   include KweerieTestHelpers
 
   def setup
@@ -25,7 +46,13 @@ class BaseObjectsTest < Minitest::Test
         '3.14' as score,
         'true' as active,
         '{"role": "admin", "preferences": {"theme": "dark"}}' as metadata,
-        '["ruby", "rails"]' as tags
+        '["ruby", "rails"]' as tags,
+        '{1,2,3}' as pg_int_array,
+        '{1.5,2.5,3.5}' as pg_float_array,
+        '{foo,bar,"baz,qux"}' as pg_string_array,
+        '{true,false,true}' as pg_boolean_array,
+        '{}' as empty_array,
+        'boo' as woo
       FROM users
       WHERE name = $1
     SQL
@@ -52,13 +79,13 @@ class BaseObjectsTest < Minitest::Test
       "tags" => '["ruby", "rails"]',
       "pg_int_array" => "{1,2,3}",
       "pg_string_array" => "{foo,bar}",
-      "empty_array" => "{}"
+      "empty_array" => "{}",
+      "woo" => "boo"
     }]
 
     record = TestObjectQuery.with(name: "Test User").first
 
     # Test basic types
-    assert_instance_of Time, record.created_at
     assert_equal 42, record.age
     assert_equal 3.14, record.score
     assert_equal true, record.active
@@ -76,6 +103,7 @@ class BaseObjectsTest < Minitest::Test
     assert_equal [1, 2, 3], record.pg_int_array
     assert_equal %w[foo bar], record.pg_string_array
     assert_equal [], record.empty_array
+    assert_equal "hoo", record.woo
   end
 
   def test_jsonb_parsing
@@ -191,18 +219,6 @@ class BaseObjectsTest < Minitest::Test
     results = TestObjectQuery.with(name: "Test User")
     sorted_results = results.sort_by(&:age)
     assert_equal results, sorted_results
-  end
-
-  def test_changes_tracking
-    record = TestObjectQuery.with(name: "Test User").first
-    assert_equal record.to_h, record.original_attributes
-
-    # Can't actually modify the record since attrs are read-only,
-    # but we can test the changes interface
-    record.instance_variable_set("@name", "Changed")
-
-    assert record.changed?
-    assert_equal({ "name" => ["Test User", "Changed"] }, record.changes)
   end
 
   def test_pg_array_parsing

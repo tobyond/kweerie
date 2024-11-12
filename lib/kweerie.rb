@@ -26,6 +26,9 @@ end
 
 require_relative "kweerie/configuration"
 require_relative "kweerie/base"
-require_relative "kweerie/base_objects"
+require_relative "kweerie/base_object"
 require_relative "kweerie/sql_path_resolver"
 require_relative "kweerie/result_class_generator"
+require_relative "kweerie/types/boolean"
+require_relative "kweerie/types/pg_array"
+require_relative "kweerie/types/pg_jsonb"
