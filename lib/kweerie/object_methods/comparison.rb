@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module ResultClassComponents
+module ObjectMethods
   module Comparison
     def <=>(other)
       return nil unless other.is_a?(self.class)

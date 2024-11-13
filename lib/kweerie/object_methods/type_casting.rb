@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module ResultClassComponents
+module ObjectMethods
   module TypeCasting
     def type_cast_value(value, type_definition)
       return value if type_definition.nil?

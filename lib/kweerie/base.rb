@@ -172,15 +172,6 @@ module Kweerie
         ordered_params = bindings.transform_values { |position| params[bindings.key(position)] }
         ordered_params.values
       end
-
-      def root_path
-        defined?(Rails) ? Rails.root : Dir.pwd
-      end
-
-      def using_activerecord?
-        defined?(ActiveRecord::Base) &&
-          Kweerie.configuration.connection_provider == Kweerie::Configuration.new.connection_provider
-      end
     end
   end
 end

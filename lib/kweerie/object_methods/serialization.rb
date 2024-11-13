@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module ResultClassComponents
+module ObjectMethods
   module Serialization
     def to_h
       attribute_names.each_with_object({}) do |name, hash|

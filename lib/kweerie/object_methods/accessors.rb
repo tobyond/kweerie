@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module ResultClassComponents
+module ObjectMethods
   module Accessors
     def [](key)
       instance_variable_get("@#{key}")

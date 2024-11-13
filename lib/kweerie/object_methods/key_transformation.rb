@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module ResultClassComponents
+module ObjectMethods
   module KeyTransformation
     def deep_stringify_keys(obj)
       case obj
