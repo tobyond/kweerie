@@ -25,10 +25,10 @@ class KweerieGenerator < Rails::Generators::NamedBase
     FileUtils.mkdir_p("app/queries")
 
     # Create the Ruby file
-    create_file "app/queries/#{file_name}.rb", template_content
+    create_file "#{default_path}/#{file_name}.rb", template_content
 
     # Create the SQL file
-    create_file "app/queries/#{file_name}.sql", <<~SQL
+    create_file "#{default_path}/#{file_name}.sql", <<~SQL
       -- Write your SQL query here
       -- Available parameters: #{parameters.map { |p| "$#{parameters.index(p) + 1} (#{p})" }.join(", ")}
 
@@ -49,5 +49,9 @@ class KweerieGenerator < Rails::Generators::NamedBase
 
   def class_name
     name.classify
+  end
+
+  def default_path
+    Kweerie.configuration.default_path
   end
 end

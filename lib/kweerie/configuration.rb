@@ -2,7 +2,7 @@
 
 module Kweerie
   class Configuration
-    attr_accessor :connection_provider, :sql_paths
+    attr_accessor :connection_provider, :sql_paths, :default_path
 
     def initialize
       # Default to using ActiveRecord's connection if available
@@ -20,6 +20,8 @@ module Kweerie
         paths.unshift("lib/queries") unless defined?(Rails)
         paths
       }
+
+      @default_path = defined?(Rails) ? "app/queries" : "lib/queries"
     end
   end
 end

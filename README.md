@@ -324,8 +324,8 @@ Kweerie.configure do |config|
   # Use a custom connection provider
   config.connection_provider = -> { MyCustomConnectionPool.connection }
   
-  # Configure where to look for SQL files
-  config.sql_paths = -> { ['db/queries', 'app/sql'] }
+  # Configure where to look for SQL files. Generator also uses this path
+  config.default_path = 'app/sql'
 end
 ```
 

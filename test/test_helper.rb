@@ -35,7 +35,7 @@ module KweerieTestHelpers
 
     Rails.root = Pathname.new(@temp_dir)
     Kweerie.configure do |config|
-      config.sql_paths = -> { [@queries_dir] }
+      config.default_path = @queries_dir
     end
   end
 

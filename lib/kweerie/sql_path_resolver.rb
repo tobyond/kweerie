@@ -51,14 +51,13 @@ class SQLPathResolver
   end
 
   def find_in_configured_paths(filename)
-    configured_paths.find do |path|
-      full_path = File.join(path, filename)
-      return full_path if File.exist?(full_path)
-    end
+    full_path = File.join(path, filename)
+
+    full_path if File.exist?(full_path)
   end
 
-  def configured_paths
-    Kweerie.configuration.sql_paths.call
+  def path
+    Kweerie.configuration.default_path
   end
 
   def validate_file_exists!(path)

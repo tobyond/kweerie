@@ -1,4 +1,8 @@
-## [Unreleased]
+## [0.3.0] - 2024-11-21
+
+- changed sql_paths to default_path.
+- fixed generate to handle defined path
+
 ## [0.2.0] - 2024-11-12
 
 - changed BaseObjects to BaseObject.
